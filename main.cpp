@@ -68,6 +68,8 @@ int main(){
 			printf("Interrupt status reg reset.\n");
 			sleep_enable();
 			sleep_mode();
+		} else {
+			printf("We woke up for some reason that wasn't due to port a pin 0..\n");
 		}
 	}
 }
