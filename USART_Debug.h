@@ -15,7 +15,7 @@ extern "C"{
 	//static int usart_putchar(char c, FILE * stream);
 
 	int usart_getchar(FILE * stream);
-	void setDebugOutputPort(USART_t * port);
+	void set_debug_output_port(USART_t * port);
 }
 
 #endif /* USART_DEBUG_H_ */

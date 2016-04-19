@@ -28,7 +28,7 @@ extern "C"{
 		return data;
 	}
 
-	void setDebugOutputPort(USART_t * port){
+	void set_debug_output_port(USART_t * port){
 
 		// set USART port for debugging
 		stdio_usart = port;
