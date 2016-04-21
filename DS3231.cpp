@@ -40,19 +40,19 @@ DS3231::DS3231(TWI_Data * twi_d, uint8_t address) : TWI(twi_d){
 	alarmType = disabled;
 	alarm1_en = false;
 	alarm2_en = false;
-	printf("Initial control registers:\n");
-	printControlRegisters();
-	printf("Initial status registers:\n");
-	printStatusRegisters();
+	//printf("Initial control registers:\n");
+	//printControlRegisters();
+	//printf("Initial status registers:\n");
+	//printStatusRegisters();
 
 	disable32kHzOut();
 	readCurrentAlarm1();
 	enableAlarm1();
 
-	printf("Final setup control registers:\n");
-	printControlRegisters();
-	printf("Final setup status registers:\n");
-	printStatusRegisters();
+	//printf("Final setup control registers:\n");
+	//printControlRegisters();
+	//printf("Final setup status registers:\n");
+	//printStatusRegisters();
 }
 
 // TODO: using interrupts to update system clock internally
@@ -72,23 +72,23 @@ DS3231::DS3231(TWI_Data * twi_d, uint8_t address, bool high_update_frequency){
 
 void DS3231::disable32kHzOut(){
 
-	printf("Disabling 32kHz out.\n");
+	//printf("Disabling 32kHz out.\n");
 	// read current status register
 	uint8_t stat_reg = readI2C_Register(address, DS3231_STATUSREG);
 
-	printf("Updating status register..\n");
-	_delay_ms(8);
+	//printf("Updating status register..\n");
+	//_delay_ms(8);
 	// and with not 32khz output and update
 	stat_reg &= ~STATUSREG_EN32kHz;
 	writeI2C_Register(address, DS3231_STATUSREG, stat_reg);
 
-	_delay_ms(8);
-	printf("Reading status reg..\n");
+	//_delay_ms(8);
+	//printf("Reading status reg..\n");
 
 	stat_reg = 0;
 	stat_reg = readI2C_Register(address, DS3231_STATUSREG);
-	_delay_ms(4);
-	printf("\nStatus reg val: %d\n", stat_reg);
+	//_delay_ms(4);
+	//printf("\nStatus reg val: %d\n", stat_reg);
 
 }
 
@@ -205,16 +205,16 @@ void DS3231::resetAlarm2Flag(){
 
 // enable alarm 1
 void DS3231::enableAlarm1(){
-	printf("Enabling alarm 1..\n");
-	printControlRegisters();
+	//printf("Enabling alarm 1..\n");
+	//printControlRegisters();
 	uint8_t ctrl_reg = readI2C_Register(address, DS3231_CONTROLREG);
 
 	//logical and with A2IE & INTCN
 	ctrl_reg |= (CONTROLREG_A1IE | CONTROLREG_INTCN);
-	printf("Writing %d to ctrl reg.. \n", ctrl_reg);
+	//printf("Writing %d to ctrl reg.. \n", ctrl_reg);
 	writeI2C_Register(address, DS3231_CONTROLREG, ctrl_reg);
 
-	printControlRegisters();
+	//printControlRegisters();
 	//ctrl_reg = 0;
 	//ctrl_reg = readI2C_Register(address, DS3231_CONTROLREG);
 	//printf("Double checking control reg status: %d\n", ctrl_reg);

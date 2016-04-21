@@ -1,6 +1,13 @@
+/*
+ * /home/leo/Applications/arduino-1.6.7/hardware/tools/avr/bin
+ * /home/leo/Applications/arduino-1.6.7/hardware/tools/avr/avr/include
+ *
+ */
+
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
+//#include <avr/wdt.h>
 #include <util/delay.h>
 
 #include "main.h"
@@ -41,13 +48,20 @@ static inline void setup_twi_rtc(uint8_t rtc_address){
 int main(){
 
 	init_clocks();						// set clock to internal @ 32MHz
-	restart_interrupts();				// make sure interrupts are reset
-	setup_porta_interrupts();			// enable interrupts on port a (falling)
+	//wdt_enable(WDTO_1S);
+	restart_interrupts();				/* make sure interrupts are reset */
+	//wdt_reset();
+	setup_porta_interrupts();			/* enable interrupts on port a (falling) */
+	//wdt_reset();
 	setup_usart_c0();					// start serial comms on USART port C0
+	//wdt_reset();
 	set_debug_output_port(&USARTC0);	// make printf and scanf redirect to serial port C0
-
+	//wdt_reset();
 	setup_twi_rtc(DS3231_ADDR);
+	//wdt_reset();
 
+	//wdt_disable();
+	printf("\nPROGRAM BEGIN\n\n");
 	cmdReader.mainLoop();
 
 	// enable testing LEDs
@@ -59,19 +73,22 @@ int main(){
 	// main loop..
 	while(1){
 		if((interrupt_status & ALARM_FLAG) == ALARM_FLAG){
-			printf("RTC alarm triggered!!!\n");
-			//PORTB.OUTTGL = PIN3_bm;
-			_delay_ms(8);
-			printf("Setting next alarm.\n");
+			printf("Alarm triggered!\n");
+			//wdt_enable(WDTO_2S);
+			//wdt_reset();
+			//printf("Setting next alarm.\n");
 			rtc.setNextIntervalAlarm();
 			interrupt_status &= ~ALARM_FLAG;	//clear alarm flag
 			printf("Interrupt status reg reset.\n");
+			//wdt_disable();
 			sleep_enable();
 			sleep_mode();
+
 		} else {
 			printf("We woke up for some reason that wasn't due to port a pin 0..\n");
 		}
 	}
+
 }
 
 // DS3231 alarm interrupt pin

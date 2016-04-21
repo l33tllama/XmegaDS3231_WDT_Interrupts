@@ -26,7 +26,7 @@ TWI::TWI(){
 // main constructor
 TWI::TWI(TWI_Data * twi_data) {
 	
-	printf("Starting setting up an i2c port..\n");
+	//printf("Starting setting up an i2c port..\n");
 	
 	this->twi_data = twi_data;
 	port = twi_data->port;
@@ -58,7 +58,7 @@ TWI::TWI(TWI_Data * twi_data) {
 
 inline register8_t TWI::getBaudVal(int baud){
 	register8_t baudval = (F_CPU / (2 * baud)) - 5;
-	printf("Baud val: %d\n", baudval);
+	//printf("Baud val: %d\n", baudval);
 	return baudval;
 }
 
