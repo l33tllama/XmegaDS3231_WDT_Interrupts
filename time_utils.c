@@ -41,46 +41,114 @@ uint64_t make_timestamp(TIME_t * t){
 
 TIME_t * timestamp_to_struct(uint64_t timestamp){
 	TIME_t * t;
-	uint16_t year_count = 0;
-	uint8_t mon_count = 0;
-	uint8_t day_count = 0;
-	uint8_t hour_count = 0;
-	uint8_t sec_count = 0;
-	uint64_t seconds_count = 0;
 
-	// redundant?
 	uint16_t year = 0;
 	uint8_t month = 0;
-	uint8_t dom = 0;
+	uint8_t day_of_month = 0;
 	uint8_t hour = 0;
-	uint8_t min = 0;
-	uint8_t sec = 0;
+	uint8_t minute = 0;
+	uint8_t seconds = 0;
 
+	uint64_t seconds_count = 0;
+	uint64_t last_seconds_count = 0;
+
+	// Get seconds since beginning of the year (and find the current year)
 	while(1){
-		seconds_count += (year_count * YEAR_S) + IS_LEAP_YEAR(year_count)? DAY_S : 0;
+		seconds_count += (year * YEAR_S) + IS_LEAP_YEAR(year)? DAY_S : 0;
 		if (seconds_count > timestamp){
 			break;
 		}
-
-		year_count++;
+		last_seconds_count = seconds_count;
+		year++;
 	}
-	year = year_count;
 
 	// seconds since beginning of year
-	uint16_t mon_d_hr_min_sec = timestamp - (year_count * YEAR_S);
+	uint16_t seconds_since_year_begin = timestamp - last_seconds_count;
+
+
+	// Get seconds since the beginning of the month (and find current month)
+	unsigned long * mon_ptr = IS_LEAP_YEAR(year) ?  &seconds_per_month_no_leap :
+			&seconds_per_month_leap;
 
 	seconds_count = 0;
-
-	bool leap_year = IS_LEAP_YEAR(year);
-	/*
-	unsigned long * mon_s_ptr;
-	if(
+	last_seconds_count = 0;
 
 	while(1){
-		seconds_count += (mon_count * )
+		seconds_count += (month * (*mon_ptr)++);
+		if(seconds_count > timestamp){
+			break;
+		}
+		month++;
+		last_seconds_count = seconds_count;
 	}
-*/
+
+	uint16_t seconds_since_month_begin = timestamp - (seconds_since_year_begin + last_seconds_count);
+
+	// Get seconds since the start of the day (and find day of month)
+	seconds_count = 0;
+	last_seconds_count = 0;
+
+	while(1){
+		seconds_count += (day_of_month * DAY_S);
+		if(seconds_count > timestamp){
+			break;
+		}
+		day_of_month++;
+		last_seconds_count = seconds_count;
+	}
+
+	uint16_t seconds_since_day_begin = timestamp - (seconds_since_year_begin
+			+ seconds_since_month_begin + last_seconds_count);
+
+	// Get seconds since the start of the current hour (and find current hour)
+	seconds_count = 0;
+	last_seconds_count = 0;
+
+	while(1){
+		seconds_count += (hour * HOUR_S);
+		if(seconds_count > timestamp){
+			break;
+		}
+		hour++;
+		last_seconds_count = seconds_count;
+	}
+
+	uint16_t seconds_since_hour_begin = timestamp - (seconds_since_year_begin
+			+ seconds_since_month_begin + seconds_since_day_begin);
+
+	if(seconds_since_hour_begin > HOUR_S){
+		printf("Uh oh.. too many seconds in this hour.. %d\n", seconds_since_hour_begin);
+	}
+
+	// Get seconds since the start of the current minute (and find the current minute)
+	while(1){
+		seconds_count += (minute * MIN_S);
+		if(seconds_count > timestamp){
+			break;
+		}
+		minute++;
+		last_seconds_count = seconds_count;
+	}
+
+	uint16_t seconds_since_minute_begin = timestamp - (seconds_since_year_begin
+			+ seconds_since_month_begin + seconds_since_day_begin
+			+ seconds_since_hour_begin);
+
+	if(seconds_since_minute_begin > 59) {
+		printf("Uh oh... too many seconds this minute..");
+		seconds = 59;
+	} else {
+		seconds = seconds_since_minute_begin;
+	}
+	t->year = year;
+	t->mon = month;
+	t->dom = day_of_month;
+	t->hour = hour;
+	t->min = minute;
+	t->sec = seconds;
 
 
-	return 0;
+	return t;
 }
+
+
