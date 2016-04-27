@@ -68,7 +68,9 @@ int main(){
 	PORTB.DIR  = 0b1111;
 
 	// go to sleep... (change pin to #2? - only asynchronous pin?)
-	set_sleep_mode(SLEEP_MODE_IDLE);
+	printf("Going to sleep..\n");
+	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+	printf("Woke up from sleep for first time.\n");
 
 	// main loop..
 	while(1){
@@ -84,9 +86,11 @@ int main(){
 			sleep_enable();
 			sleep_mode();
 
-		} else {
-			printf("We woke up for some reason that wasn't due to port a pin 0..\n");
 		}
+		/*
+		else {
+			printf("We woke up for some reason that wasn't due to port a pin 0..\n");
+		} */
 	}
 
 }

@@ -8,7 +8,8 @@
 #ifndef DS3231_H_
 #define DS3231_H_
 
-#include "time.h"
+//#include "time.h"
+#include "time_utils.h"
 #include "TWI.h"
 
 /* DS3231 Real-time clock library
@@ -48,27 +49,15 @@
 enum WMDay { weekDay, dayOfMonth };
 enum AlarmType { disabled, seconds, interval, daily, minute, once_off };
 
-typedef struct AlarmIntervalData2{
-	uint8_t seconds;
-	uint8_t minutes;
-	uint8_t hours;
-	uint8_t days;
-	WMDay wm;
-} alarmData;
-
 class DS3231 : public TWI{
 private:
-	time_t system_time;
-	struct tm sys_time_strc;
-	alarmData alarm_data;
+	TIME_dt interval_dt;
 	AlarmType alarmType;
 	bool alarm1_en;
 	bool alarm2_en;
 	uint8_t address;
 	void printControlRegisters();
 	void printStatusRegisters();
-
-
 
 //TODO: change get/set time to pointers
 public:
@@ -78,20 +67,20 @@ public:
 	uint8_t readI2C_Register(uint8_t addr, uint8_t reg);
 		void writeI2C_Register(uint8_t addr, uint8_t reg, uint8_t val);
 	void disable32kHzOut();
-	void setTime(struct tm * time);
-	struct tm * getTime();
+	void setTime(TIME_t * t);
+	TIME_t getTime();
 	void resetAlarm1Flag();
 	void resetAlarm2Flag();
-	void setDailyAlarm(struct tm * time);
+	void setDailyAlarm(TIME_t * t);
 	void setMinuteAlarm(uint8_t seconds);
-	void setAlarmInterval(struct tm * time, WMDay wm);
+	void setAlarmInterval(TIME_t * t, WMDay wm);
 	void readCurrentAlarm1();
 	void enableAlarm1();
 	void enableAlarm2();
 	void disableAlarm();
 	void setNextIntervalAlarm();
 	void setAlarmInterval(uint8_t seconds, uint8_t minutes, uint8_t hours, uint8_t days);
-	void setAlarmDate(struct tm * time);
+	void setAlarmDate(TIME_t * t);
 	virtual ~DS3231();
 };
 

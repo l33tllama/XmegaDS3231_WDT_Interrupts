@@ -23,11 +23,12 @@
 
 #include "DS3231.h"
 #include "TWI.h"
+#include "time_utils.h"
+#include <string.h>
 #include <stdio.h>
 #include <util/delay.h>
 
 DS3231::DS3231() : TWI() {
-	system_time = 0;
 	address = 0x00;
 	alarmType = disabled;
 	alarm1_en = false;
@@ -35,7 +36,6 @@ DS3231::DS3231() : TWI() {
 }
 
 DS3231::DS3231(TWI_Data * twi_d, uint8_t address) : TWI(twi_d){
-	system_time = 0;
 	this->address = address;
 	alarmType = disabled;
 	alarm1_en = false;
@@ -64,7 +64,6 @@ DS3231::DS3231(TWI_Data * twi_d, uint8_t address, bool high_update_frequency){
 	} else {
 		DS3231(twi_d, address);
 	}
-	system_time = 0;
 	alarm1_en = false;
 	alarm2_en = false;
 	alarmType = disabled;
@@ -129,26 +128,24 @@ void DS3231::writeI2C_Register(uint8_t addr, uint8_t reg, uint8_t val) {
 // Set the time by writing to the beginning address of the DS3231
 // and incrementing until at the end of the time registers.
 // Then ensure the oscillator is running (important)
-void DS3231::setTime(struct tm * time){
+void DS3231::setTime(TIME_t * time){
 	beginWrite(address);
 	putChar(0x00);
-	printf("Order:\ns:\t%d\nmin:\t%d\nh:\t%d\nd:\t%d\nmon:\t%d\ny:\t%d\n",
-				time->tm_sec, time->tm_min, time->tm_hour,
-				time->tm_mday, time->tm_mon, time->tm_year);
-	putChar(bin2bcd(time->tm_sec));
-	putChar(bin2bcd(time->tm_min));
-	putChar(bin2bcd(time->tm_hour));
+	printf("Setting time.\nOrder:\ns:\t%d\nmin:\t%d\nh:\t%d\nd:\t%d\nmon:\t%d\ny:\t%d\n",
+				time->sec, time->min, time->hour,
+				time->dom, time->mon, time->year);
+	putChar(bin2bcd(time->sec));
+	putChar(bin2bcd(time->min));
+	putChar(bin2bcd(time->hour));
 	putChar(bin2bcd(0x00));
-	putChar(bin2bcd(time->tm_mday));
-	putChar(bin2bcd(time->tm_mon));
-	putChar(bin2bcd(time->tm_year - 2000));
+	putChar(bin2bcd(time->dom));
+	putChar(bin2bcd(time->mon));
+	putChar(bin2bcd(time->year - 2000));
 	endTransmission();
-	printf("Ended transmission.\n");
 
 	// ensure main oscillator is running!
 	// read current OSF (oscillator flag) value (0b10000000)
 	uint8_t ctrl_reg = readI2C_Register(address, DS3231_CONTROLREG);
-	printf("Read status reg.\n");
 	ctrl_reg &= ~CONTROLREG_EOSC;	// set to NOT 1 (0) (when set to 1 it's not running)
 
 	// update status register, with oscillator set to running
@@ -156,27 +153,24 @@ void DS3231::setTime(struct tm * time){
 	printf("Done.\n");
 }
 
-struct tm * DS3231::getTime(){
-	//printf("Sending the command to get the time. \n");
+TIME_t DS3231::getTime(){
+	TIME_t t;
+
 	beginWrite(address);
 	putChar(0x00);
 	endTransmission();
 
-	//printf("Getting time now..\n");
-	sys_time_strc.tm_sec = bcd2bin(beginReadFirstByte(address) & 0x7F);
-	sys_time_strc.tm_min = bcd2bin((uint8_t)getChar());
-	sys_time_strc.tm_hour = bcd2bin((uint8_t)getChar());
+	t.sec = bcd2bin(beginReadFirstByte(address) & 0x7F);
+	t.min = bcd2bin((uint8_t)getChar());
+	t.hour = bcd2bin((uint8_t)getChar());
 	getChar();
-	sys_time_strc.tm_mday = bcd2bin((uint8_t)getChar());
-	sys_time_strc.tm_mon = bcd2bin((uint8_t)getChar());
-	sys_time_strc.tm_year = bcd2bin((uint16_t)getChar()) + 2000 - 1900;
-	/*printf("Order:\ns:\t%d\nmin:\t%d\nh:\t%d\nd:\t%d\nmon:\t%d\ny:\t%d\n",
-			sys_time_strc.tm_sec, sys_time_strc.tm_min, sys_time_strc.tm_hour,
-			sys_time_strc.tm_mday, sys_time_strc.tm_mon, sys_time_strc.tm_year); */
+	t.dom = bcd2bin((uint8_t)getChar());
+	t.mon = bcd2bin((uint8_t)getChar());
+	t.year = bcd2bin((uint16_t)getChar()) + 2000 - 1900;
+
 	endTransmission();
 
-	//printf("Done.\n");
-	return &sys_time_strc;
+	return t;
 }
 
 // reset alarm 1 - usually called when alarm was triggered
@@ -294,10 +288,10 @@ void DS3231::printStatusRegisters(){
  * The DS3231 will alarm when hours, minuts and seconds match.
  * the day/date register has to be 1 << 7 to tell the RTC to ignore it
  */
-void DS3231::setDailyAlarm(struct tm * time){
-	uint8_t seconds = bin2bcd(time->tm_sec);
-	uint8_t minutes = bin2bcd(time->tm_min);
-	uint8_t hours = bin2bcd(time->tm_hour);
+void DS3231::setDailyAlarm(TIME_t * time){
+	uint8_t seconds = bin2bcd(time->sec);
+	uint8_t minutes = bin2bcd(time->min);
+	uint8_t hours = bin2bcd(time->hour);
 
 	beginWrite(address);
 	putChar(DS3231_A1REG);
@@ -314,10 +308,7 @@ void DS3231::disableAlarm(){
 }
 
 void DS3231::setAlarmInterval(uint8_t seconds, uint8_t minutes, uint8_t hours, uint8_t days){
-	alarm_data.seconds = seconds;
-	alarm_data.minutes = minutes;
-	alarm_data.hours = hours;
-	alarm_data.days = days;
+	make_dtime(&interval_dt, 0, 0, days, hours, minutes, seconds);
 	// TODO: deal with times when alarm was a different type (eg daily)
 	alarmType = interval;
 
@@ -351,67 +342,49 @@ void DS3231::setNextIntervalAlarm(){
 
 	resetAlarm1Flag();
 
-	time_t rawtime_current, rawtime_next_alarm;
-
 	// get current time
-	struct tm * current_time = getTime();
+	TIME_t * current_tm = NULL;
+	(*current_tm) = getTime();
+	current_tm->year += 1900;
+	TIME_t * alarm_tm = NULL;
+
 	//printf("Current time (asctime): %s\n", asctime(current_time));
-	printf("Current time: %d %d:%d:%d\n", current_time->tm_mday, current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
-	struct tm * next_alarm;
+	printf("Current time: %d %d:%d:%d\n", current_tm->dom,
+			current_tm->hour, current_tm->min, current_tm->sec);
 
-	rawtime_current = mk_gmtime(current_time);
+	memcpy(alarm_tm, current_tm, sizeof(struct TIME));
+	add_time(alarm_tm, &interval_dt);
 
-	//struct tm * current_time_2 = gmtime(&rawtime_current);
-	//printf("Current time converted back: %d %s\n", 1900 + current_time_2->tm_year, asctime(current_time_2));
-
-	unsigned long int interval = alarm_data.seconds +
-			60 * alarm_data.minutes + 3600 * alarm_data.hours +
-			86400 * alarm_data.days;
-
-	rawtime_next_alarm = rawtime_current + interval;
-
-	next_alarm = gmtime(&rawtime_next_alarm);
-
-	/*
-	next_alarm->tm_sec += alarm_data.seconds;
-	//mktime(next_alarm);
-	next_alarm->tm_min += alarm_data.minutes;
-	//mktime(next_alarm);
-	next_alarm->tm_hour += alarm_data.hours;
-	//mktime(next_alarm);
-	next_alarm->tm_mday += alarm_data.days;
-	//mktime(next_alarm);*/
-
-	uint8_t seconds = bin2bcd(next_alarm->tm_sec);
-	uint8_t minutes = bin2bcd(next_alarm->tm_min);
-	uint8_t hours = bin2bcd(next_alarm->tm_hour);
-	uint8_t mday = bin2bcd(next_alarm->tm_mday);
+	uint8_t seconds = bin2bcd(alarm_tm->sec);
+	uint8_t minutes = bin2bcd(alarm_tm->min);
+	uint8_t hours = bin2bcd(alarm_tm->hour);
+	uint8_t mday = bin2bcd(alarm_tm->dom);
 
 	//printf("Current time raw:  %lu\n", rawtime_current);
 	//printf("Interval time raw: %lu\n", interval);
 	//printf("Next alarm time raw: %lu\n", rawtime_next_alarm);
 
-	printf("Next alarm  : %d %d:%d:%d\n", next_alarm->tm_mday, next_alarm->tm_hour, next_alarm->tm_min, next_alarm->tm_sec);
+	printf("Next alarm  : %d %d:%d:%d\n", alarm_tm->dom, alarm_tm->hour,
+			alarm_tm->min, alarm_tm->sec);
 
 
 	// could be redundant.. trying anyway
-	if(next_alarm->tm_mday == current_time->tm_mday){
+	if(alarm_tm->dom == current_tm->dom){
 		mday |= _BV(7);
 	}
 	// TODO: if day is different but hour/min also match..
-	if(next_alarm->tm_hour == current_time->tm_hour){
+	if(alarm_tm->hour == current_tm->hour){
 		hours |= _BV(7);
 		mday |= _BV(7);
 	}
-	if(next_alarm->tm_min == current_time->tm_min){
+	if(alarm_tm->min == current_tm->min){
 		minutes |= _BV(7);
 		hours |= _BV(7);
 		mday |= _BV(7);
 	}
 
 	// if the next interval is tomorrow, rtc needs to know that day/date is not to be ignored
-	if(!(next_alarm->tm_wday > current_time->tm_wday ||
-		next_alarm->tm_mday > current_time->tm_mday)){
+	if(!(alarm_tm->dom > current_tm->dom)){
 		//mday |= _BV(6); //ignore the day/date
 	}
 
