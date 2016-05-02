@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define EPOCH_YR 2015
+#define EPOCH_YR 1970
 #define YEAR_S 31536000
 #define MON31 2678400
 #define MON30 2592000
@@ -60,13 +60,13 @@ typedef struct TIME_DELTA{
 	uint16_t years;
 } TIME_dt;
 
-TIME_t timestamp_to_struct(uint32_t timestamp);
-TIME_t timestamp_to_struct_v2(uint32_t timestamp);
+TIME_t timestamp_to_struct(uint64_t timestamp);
+TIME_t timestamp_to_struct_v2(uint64_t timestamp);
 
-uint32_t make_timestamp(TIME_t * t);
+uint64_t make_timestamp(TIME_t * t);
 
-uint32_t add_months(TIME_t * t, uint32_t in, uint8_t months);
-uint32_t add_years(TIME_t * t, uint32_t in, uint8_t years);
+uint64_t add_months(TIME_t * t, uint64_t in, uint8_t months);
+uint64_t add_years(TIME_t * t, uint64_t in, uint8_t years);
 
 void make_time(TIME_t * t, uint16_t year, uint8_t month, uint8_t day_of_month, uint8_t hour, uint8_t min, uint8_t sec);
 void make_dtime(TIME_dt * dt, uint16_t years, uint8_t months, uint8_t days, uint8_t hours, uint8_t mins, uint8_t secs);

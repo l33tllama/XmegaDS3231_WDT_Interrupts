@@ -20,10 +20,10 @@ const uint8_t daysInMonth []  = { 31,28,31,30,31,30,31,31,30,31,30,31 };
  *
  */
 
-uint32_t make_timestamp(TIME_t * t){
+uint64_t make_timestamp(TIME_t * t){
 
 	// final return value
-	uint32_t time_since_epoch = 0;
+	uint64_t time_since_epoch = 0;
 
 	// Add seconds for this year since Jan 1 1970
 	uint16_t iy;
@@ -35,12 +35,15 @@ uint32_t make_timestamp(TIME_t * t){
 	// Accumulatively add seconds per month since beginning of the year
 	for(i = 1; i < t->mon; i++){
 		time_since_epoch += daysInMonth[i-1] * DAY_S;
-		if(IS_LEAP_YEAR(t->year) && i == 2)
+
+		if(IS_LEAP_YEAR(t->year) && i == 2){
 			time_since_epoch += DAY_S;
+		}
+
 	}
 
 	// add seconds for each day per month
-	time_since_epoch += (t->dom) * DAY_S;
+	time_since_epoch += (t->dom - 1) * DAY_S;
 
 	// add seconds per hour in the day
 	time_since_epoch += t->hour * HOUR_S;
@@ -54,7 +57,7 @@ uint32_t make_timestamp(TIME_t * t){
 	return time_since_epoch;
 }
 
-TIME_t timestamp_to_struct_v2(uint32_t timestamp){
+TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 	TIME_t t;
 	uint16_t year;
 	uint8_t month;
@@ -62,8 +65,8 @@ TIME_t timestamp_to_struct_v2(uint32_t timestamp){
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t second;
-	uint32_t sec_c = 0;
-	uint32_t last_sec_c = EPOCH_YR;
+	uint64_t sec_c = 0;
+	uint64_t last_sec_c = EPOCH_YR;
 
 	// find what year it is
 	for(year = EPOCH_YR; ; year++){
@@ -75,6 +78,7 @@ TIME_t timestamp_to_struct_v2(uint32_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
+	printf("Year: %d\n", year);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year in timestamp
 
@@ -87,16 +91,18 @@ TIME_t timestamp_to_struct_v2(uint32_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
+	printf("Month: %d\n", month);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year plus current month
 
 	// find what day it is
-	for(day = 0; ; day++){
+	for(day = 1; ; day++){
 		sec_c += DAY_S;
 		if(sec_c > timestamp)
 			break;
 		last_sec_c = sec_c;
 	}
+	printf("day: %d\n", day);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year plus current month
 	// plus current day
@@ -108,6 +114,7 @@ TIME_t timestamp_to_struct_v2(uint32_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
+	printf("hour: %d\n", hour);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year plus current month
 	// plus current day plus current hour
@@ -119,8 +126,10 @@ TIME_t timestamp_to_struct_v2(uint32_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
+	printf("Miute: %d\n", minute);
 
 	second = timestamp - last_sec_c;
+	printf("Seconds: %lu\n", timestamp - last_sec_c);
 	t.year = year;
 	t.mon = month;
 	t.dom = day;
@@ -132,7 +141,7 @@ TIME_t timestamp_to_struct_v2(uint32_t timestamp){
 }
 
 
-TIME_t timestamp_to_struct(uint32_t timestamp){
+TIME_t timestamp_to_struct(uint64_t timestamp){
 	TIME_t t;
 
 	/* Adafruit method - division =  inaccurate? */
@@ -195,7 +204,7 @@ void make_dtime(TIME_dt * dt, uint16_t years, uint8_t months, uint8_t days, uint
 	dt->seconds = secs;
 }
 
-uint32_t add_months(TIME_t * t, uint32_t in, uint8_t months){
+uint64_t add_months(TIME_t * t, uint64_t in, uint8_t months){
 
 	uint8_t i;
 
@@ -211,7 +220,7 @@ uint32_t add_months(TIME_t * t, uint32_t in, uint8_t months){
 	return in;
 }
 
-uint32_t add_years(TIME_t * t, uint32_t in, uint8_t years){
+uint64_t add_years(TIME_t * t, uint64_t in, uint8_t years){
 	in += 365 * DAY_S;
 	// TODO: add extra days per leap year
 	// find next leap year - is the number of years equal or greater than the next leap year
@@ -222,11 +231,12 @@ uint32_t add_years(TIME_t * t, uint32_t in, uint8_t years){
 }
 
 void add_time(TIME_t * base, TIME_dt * a){
+	// TODO: convert to uint64_t!!
 	printf("Time in          : %04d/%02d/%02d %02d:%02d:%02d\n", base->year, base->mon,
 				base->dom, base->hour, base->min, base->sec);
-	uint32_t t_stamp = make_timestamp(base);
+	uint64_t t_stamp = make_timestamp(base) + 65536; // why do I need to add 65535 ?????
 	printf("Current timestamp: %lu \n", t_stamp);
-	uint32_t delta_s = 0;
+	uint64_t delta_s = 0;
 
 	if (a->years > 0){
 		printf("Years addition not completely implemented yet!\n");
@@ -242,10 +252,13 @@ void add_time(TIME_t * base, TIME_dt * a){
 	delta_s += a->hours * HOUR_S;
 	delta_s += a->mins * MIN_S;
 	delta_s += a->seconds;
-	printf("New timestamp    : %lu\n", (t_stamp + delta_s));
+	uint64_t new_timestamp = t_stamp + delta_s;
+	printf("New timestamp    : %lu\n", new_timestamp);
 
-	TIME_t * n;
-	(*base) = timestamp_to_struct_v2(t_stamp + delta_s);
-	printf("New time         : %04d/%02d/%02d %02d:%02d:%02d\n", n->year, n->mon,
-			n->dom, n->hour, n->min, n->sec);
+	TIME_t n = timestamp_to_struct_v2(new_timestamp);
+
+	printf("New time         : %04d/%02d/%02d %02d:%02d:%02d\n", n.year, n.mon,
+			n.dom, n.hour, n.min, n.sec);
+
+	base = &n;
 }

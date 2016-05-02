@@ -352,7 +352,7 @@ void DS3231::setNextIntervalAlarm(){
 	printf("Current time: %d %d:%d:%d\n", current_tm->dom,
 			current_tm->hour, current_tm->min, current_tm->sec);
 
-	memcpy(alarm_tm, current_tm, sizeof(struct TIME));
+	memcpy(alarm_tm, current_tm, sizeof(current_tm));
 	add_time(alarm_tm, &interval_dt);
 
 	uint8_t seconds = bin2bcd(alarm_tm->sec);

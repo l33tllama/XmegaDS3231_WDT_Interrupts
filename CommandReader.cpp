@@ -7,7 +7,9 @@
 
 #include "CommandReader.h"
 #include "USART_Debug.h"
+#include "time_utils.h"
 #include <string.h>
+#include <stdlib.h>
 
 CommandReader::CommandReader(DS3231 * rtc) {
 	entered_config = false;
@@ -74,7 +76,7 @@ void CommandReader::setDateTimeInput(){
 
 	// if entered the correct amoun of digits including separating characters
 	if(strlen(datetime) == 19){
-		struct tm time;
+		TIME_t time;
 		// split string into relevant sections using strtok
 		char * yyyy, * mm, * dd, * hh, * m, * ss;
 		yyyy = strtok(datetime, "/");
@@ -106,11 +108,11 @@ void CommandReader::setDateTimeInput(){
 			printf("Interpreted ints: \n");
 			printf("%d/%d/%d ", dd_i, mm_i, yyyy_i);
 			printf("%d:%d:%d\n", hh_i, m_i, ss_i);
-			time.tm_mday = dd_i;
-			time.tm_mon = mm_i;
-			time.tm_year = yyyy_i;
-			time.tm_hour = hh_i;
-			time.tm_min = m_i;
+			time.dom = dd_i;
+			time.mon = mm_i;
+			time.year = yyyy_i;
+			time.hour = hh_i;
+			time.min = m_i;
 
 			rtc->setTime(&time);
 			printf("Time set.\n");
