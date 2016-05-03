@@ -62,6 +62,8 @@ typedef struct TIME_DELTA{
 
 TIME_t timestamp_to_struct(uint64_t timestamp);
 TIME_t timestamp_to_struct_v2(uint64_t timestamp);
+TIME_t copy_time(TIME_t * t);
+TIME_t add_time(TIME_t * base, TIME_dt * a);
 
 uint64_t make_timestamp(TIME_t * t);
 
@@ -70,6 +72,6 @@ uint64_t add_years(TIME_t * t, uint64_t in, uint8_t years);
 
 void make_time(TIME_t * t, uint16_t year, uint8_t month, uint8_t day_of_month, uint8_t hour, uint8_t min, uint8_t sec);
 void make_dtime(TIME_dt * dt, uint16_t years, uint8_t months, uint8_t days, uint8_t hours, uint8_t mins, uint8_t secs);
-void add_time(TIME_t * base, TIME_dt * a);
+
 
 #endif

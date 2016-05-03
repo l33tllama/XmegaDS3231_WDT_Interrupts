@@ -69,7 +69,9 @@ int main(){
 
 	// go to sleep... (change pin to #2? - only asynchronous pin?)
 	printf("Going to sleep..\n");
-	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+	set_sleep_mode(SLEEP_MODE_IDLE);
+	sleep_enable();
+	sleep_mode();
 	printf("Woke up from sleep for first time.\n");
 
 	// main loop..
@@ -85,8 +87,8 @@ int main(){
 			//wdt_disable();
 			sleep_enable();
 			sleep_mode();
-
 		}
+		printf(".");
 		/*
 		else {
 			printf("We woke up for some reason that wasn't due to port a pin 0..\n");

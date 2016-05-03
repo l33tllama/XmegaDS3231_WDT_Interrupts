@@ -176,7 +176,7 @@ TIME_t DS3231::getTime(){
 // reset alarm 1 - usually called when alarm was triggered
 void DS3231::resetAlarm1Flag(){
 	printf("Resetting alarm 1 flag..\n");
-	printStatusRegisters();
+	//printStatusRegisters();
 	_delay_ms(8);
 	// get current status register
 	uint8_t stat_reg = readI2C_Register(address, DS3231_STATUSREG);
@@ -184,7 +184,7 @@ void DS3231::resetAlarm1Flag(){
 	// logical and with not A1F (ensure it's 0)
 	stat_reg &= ~STATUSREG_A1F;
 	writeI2C_Register(address, DS3231_STATUSREG, stat_reg);
-	printStatusRegisters();
+	//printStatusRegisters();
 }
 
 // reset alarm 2 - same idea as alarm 1
@@ -346,45 +346,53 @@ void DS3231::setNextIntervalAlarm(){
 	TIME_t * current_tm = NULL;
 	(*current_tm) = getTime();
 	current_tm->year += 1900;
-	TIME_t * alarm_tm = NULL;
+	TIME_t alarm_tm;
 
 	//printf("Current time (asctime): %s\n", asctime(current_time));
 	printf("Current time: %d %d:%d:%d\n", current_tm->dom,
 			current_tm->hour, current_tm->min, current_tm->sec);
 
-	memcpy(alarm_tm, current_tm, sizeof(current_tm));
-	add_time(alarm_tm, &interval_dt);
+	//memcpy(alarm_tm, current_tm, sizeof(TIME_t));
+	alarm_tm = add_time(current_tm, &interval_dt);
 
-	uint8_t seconds = bin2bcd(alarm_tm->sec);
-	uint8_t minutes = bin2bcd(alarm_tm->min);
-	uint8_t hours = bin2bcd(alarm_tm->hour);
-	uint8_t mday = bin2bcd(alarm_tm->dom);
+	uint8_t seconds = bin2bcd(alarm_tm.sec);
+	uint8_t minutes = bin2bcd(alarm_tm.min);
+	uint8_t hours = bin2bcd(alarm_tm.hour);
+	uint8_t mday = bin2bcd(alarm_tm.dom);
+
+	if (&alarm_tm == current_tm){
+		printf("These two times should not be the same!! :( \n");
+	}
 
 	//printf("Current time raw:  %lu\n", rawtime_current);
 	//printf("Interval time raw: %lu\n", interval);
 	//printf("Next alarm time raw: %lu\n", rawtime_next_alarm);
 
-	printf("Next alarm  : %d %d:%d:%d\n", alarm_tm->dom, alarm_tm->hour,
-			alarm_tm->min, alarm_tm->sec);
-
-
-	// could be redundant.. trying anyway
-	if(alarm_tm->dom == current_tm->dom){
-		mday |= _BV(7);
-	}
-	// TODO: if day is different but hour/min also match..
-	if(alarm_tm->hour == current_tm->hour){
-		hours |= _BV(7);
-		mday |= _BV(7);
-	}
+	printf("Next alarm  : %d %d:%d:%d\n", alarm_tm.dom, alarm_tm.hour,
+			alarm_tm.min, alarm_tm.sec);
+	/*
+	// if minutes match, don't worry about mat
 	if(alarm_tm->min == current_tm->min){
 		minutes |= _BV(7);
 		hours |= _BV(7);
 		mday |= _BV(7);
-	}
+		if(alarm_tm->hour == current_tm->hour){
+				hours |= _BV(7);
+				mday |= _BV(7);
+			if(alarm_tm->dom == current_tm->dom){
+				mday |= _BV(7);
+			}
+		}
+	} */
+
+	// could be redundant.. trying anyway
+
+	// TODO: if day is different but hour/min also match..
+
+
 
 	// if the next interval is tomorrow, rtc needs to know that day/date is not to be ignored
-	if(!(alarm_tm->dom > current_tm->dom)){
+	if(!(alarm_tm.dom > current_tm->dom)){
 		//mday |= _BV(6); //ignore the day/date
 	}
 

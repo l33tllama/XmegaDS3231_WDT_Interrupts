@@ -20,7 +20,7 @@ const uint8_t daysInMonth []  = { 31,28,31,30,31,30,31,31,30,31,30,31 };
  *
  */
 
-uint64_t make_timestamp(TIME_t * t){
+inline uint64_t make_timestamp(TIME_t * t){
 
 	// final return value
 	uint64_t time_since_epoch = 0;
@@ -57,7 +57,7 @@ uint64_t make_timestamp(TIME_t * t){
 	return time_since_epoch;
 }
 
-TIME_t timestamp_to_struct_v2(uint64_t timestamp){
+inline TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 	TIME_t t;
 	uint16_t year;
 	uint8_t month;
@@ -78,7 +78,7 @@ TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
-	printf("Year: %d\n", year);
+	//printf("Year: %d\n", year);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year in timestamp
 
@@ -91,7 +91,7 @@ TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
-	printf("Month: %d\n", month);
+	//printf("Month: %d\n", month);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year plus current month
 
@@ -102,7 +102,7 @@ TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
-	printf("day: %d\n", day);
+	//printf("day: %d\n", day);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year plus current month
 	// plus current day
@@ -114,7 +114,7 @@ TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
-	printf("hour: %d\n", hour);
+	//printf("hour: %d\n", hour);
 	sec_c = last_sec_c;
 	// sec_c is now the seconds from EPOCH_YR to current year plus current month
 	// plus current day plus current hour
@@ -126,10 +126,10 @@ TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 			break;
 		last_sec_c = sec_c;
 	}
-	printf("Miute: %d\n", minute);
+	//printf("Minute: %d\n", minute);
 
 	second = timestamp - last_sec_c;
-	printf("Seconds: %lu\n", timestamp - last_sec_c);
+	//printf("Seconds: %lu\n", timestamp - last_sec_c);
 	t.year = year;
 	t.mon = month;
 	t.dom = day;
@@ -140,8 +140,14 @@ TIME_t timestamp_to_struct_v2(uint64_t timestamp){
 	return t;
 }
 
+TIME_t copy_time(TIME_t * t){
+	TIME_t new_tm;
+	make_time(&new_tm, t->year, t->mon, t->dom, t->hour, t->min, t->sec);
+	return new_tm;
+}
 
-TIME_t timestamp_to_struct(uint64_t timestamp){
+
+inline TIME_t timestamp_to_struct(uint64_t timestamp){
 	TIME_t t;
 
 	/* Adafruit method - division =  inaccurate? */
@@ -230,7 +236,7 @@ uint64_t add_years(TIME_t * t, uint64_t in, uint8_t years){
 	return in;
 }
 
-void add_time(TIME_t * base, TIME_dt * a){
+TIME_t add_time(TIME_t * base, TIME_dt * a){
 	// TODO: convert to uint64_t!!
 	printf("Time in          : %04d/%02d/%02d %02d:%02d:%02d\n", base->year, base->mon,
 				base->dom, base->hour, base->min, base->sec);
@@ -260,5 +266,5 @@ void add_time(TIME_t * base, TIME_dt * a){
 	printf("New time         : %04d/%02d/%02d %02d:%02d:%02d\n", n.year, n.mon,
 			n.dom, n.hour, n.min, n.sec);
 
-	base = &n;
+	return n;
 }
