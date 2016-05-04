@@ -95,11 +95,12 @@ int main(){
 			sleep_enable();
 			sleep_mode();
 		}
-		printf(".");
-		/*
+
+
 		else {
 			printf("We woke up for some reason that wasn't due to port a pin 0..\n");
-		} */
+		}
+		printf(".");
 	}
 
 }
