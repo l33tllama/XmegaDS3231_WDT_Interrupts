@@ -1,13 +1,18 @@
 /*
+ * XmegaDS3231_WDT_Interrupts
+ *
+ * Testing out pin interrupts from the RTC chip's alarm pin,
+ * and seeing if I can get the watchdog timer working somehow.. (to prevent chip from hanging up)
  * /home/leo/Applications/arduino-1.6.7/hardware/tools/avr/bin
  * /home/leo/Applications/arduino-1.6.7/hardware/tools/avr/avr/include
+ *
+ *	https://www.das-labor.org/svn/microcontroller/src-atmel/automatization2.0/powermeter/branch/wdt_driver.c
  *
  */
 
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
-//#include <avr/wdt.h>
 #include <util/delay.h>
 
 #include "main.h"
@@ -15,6 +20,7 @@
 #include "USART_Debug.h"
 #include "DS3231.h"
 #include "CommandReader.h"
+#include "WDT.h"
 
 volatile uint8_t interrupt_status = 0x00;
 
@@ -48,19 +54,18 @@ static inline void setup_twi_rtc(uint8_t rtc_address){
 int main(){
 
 	init_clocks();						// set clock to internal @ 32MHz
-	//wdt_enable(WDTO_1S);
 	restart_interrupts();				/* make sure interrupts are reset */
-	//wdt_reset();
 	setup_porta_interrupts();			/* enable interrupts on port a (falling) */
-	//wdt_reset();
+	WDT_enable_with_timeout(WDT_PER_2KCLK_gc); // enable WDT with 2s timeout
 	setup_usart_c0();					// start serial comms on USART port C0
-	//wdt_reset();
+	WDT_RESET();
 	set_debug_output_port(&USARTC0);	// make printf and scanf redirect to serial port C0
-	//wdt_reset();
+	WDT_RESET();
 	setup_twi_rtc(DS3231_ADDR);
-	//wdt_reset();
+	WDT_RESET();
+	WDT_disable();
 
-	//wdt_disable();
+
 	printf("\nPROGRAM BEGIN\n\n");
 	cmdReader.mainLoop();
 
@@ -78,13 +83,15 @@ int main(){
 	while(1){
 		if((interrupt_status & ALARM_FLAG) == ALARM_FLAG){
 			printf("Alarm triggered!\n");
-			//wdt_enable(WDTO_2S);
-			//wdt_reset();
+
+			// enable WDT with period of 1s
+			WDT_enable_with_timeout(WDT_PER_1KCLK_gc);
 			//printf("Setting next alarm.\n");
 			rtc.setNextIntervalAlarm();
 			interrupt_status &= ~ALARM_FLAG;	//clear alarm flag
 			printf("Interrupt status reg reset.\n");
-			//wdt_disable();
+			WDT_RESET();
+			WDT_disable();
 			sleep_enable();
 			sleep_mode();
 		}
