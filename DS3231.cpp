@@ -40,19 +40,9 @@ DS3231::DS3231(TWI_Data * twi_d, uint8_t address) : TWI(twi_d){
 	alarmType = disabled;
 	alarm1_en = false;
 	alarm2_en = false;
-	//printf("Initial control registers:\n");
-	//printControlRegisters();
-	//printf("Initial status registers:\n");
-	//printStatusRegisters();
 
 	disable32kHzOut();
-	readCurrentAlarm1();
 	enableAlarm1();
-
-	//printf("Final setup control registers:\n");
-	//printControlRegisters();
-	//printf("Final setup status registers:\n");
-	//printStatusRegisters();
 }
 
 // TODO: using interrupts to update system clock internally
@@ -70,24 +60,15 @@ DS3231::DS3231(TWI_Data * twi_d, uint8_t address, bool high_update_frequency){
 }
 
 void DS3231::disable32kHzOut(){
-
-	//printf("Disabling 32kHz out.\n");
 	// read current status register
 	uint8_t stat_reg = readI2C_Register(address, DS3231_STATUSREG);
 
-	//printf("Updating status register..\n");
-	//_delay_ms(8);
 	// and with not 32khz output and update
 	stat_reg &= ~STATUSREG_EN32kHz;
 	writeI2C_Register(address, DS3231_STATUSREG, stat_reg);
 
-	//_delay_ms(8);
-	//printf("Reading status reg..\n");
-
 	stat_reg = 0;
 	stat_reg = readI2C_Register(address, DS3231_STATUSREG);
-	//_delay_ms(4);
-	//printf("\nStatus reg val: %d\n", stat_reg);
 
 }
 
@@ -98,31 +79,21 @@ static uint8_t bcd2bin (uint8_t val) { return val - 6 * (val >> 4); }
 // Read a single value from a register in DS3231
 uint8_t DS3231::readI2C_Register(uint8_t addr, uint8_t reg) {
 	uint8_t reg_val = 0;
-	//printf("Reading i2c register.\n");
-	//_delay_ms(8);
 	beginWrite(addr);
 	putChar(reg);
 	endTransmission();
-	//_delay_ms(5);
-	//beginRead(addr);
-	//_delay_ms(5);
 	reg_val = beginReadFirstByte(address);
-	//printf("next byte for testing.. %d\n", getChar());
 	endTransmission();
-	//printf("Read i2c register val: %d\n", reg_val);
 	return reg_val;
 }
 
 // write a single value to a register in the DS3231
 // Best to read it first..
 void DS3231::writeI2C_Register(uint8_t addr, uint8_t reg, uint8_t val) {
-	//printf("About to write staus reg..\n");
-	//_delay_ms(8);
 	beginWrite(addr);
 	putChar(reg);
 	putChar(val);
 	endTransmission();
-	//printf("Done.\n");
 }
 
 // Set the time by writing to the beginning address of the DS3231
@@ -176,7 +147,7 @@ TIME_t DS3231::getTime(){
 // reset alarm 1 - usually called when alarm was triggered
 void DS3231::resetAlarm1Flag(){
 	printf("Resetting alarm 1 flag..\n");
-	//printStatusRegisters();
+
 	_delay_ms(8);
 	// get current status register
 	uint8_t stat_reg = readI2C_Register(address, DS3231_STATUSREG);
@@ -184,7 +155,6 @@ void DS3231::resetAlarm1Flag(){
 	// logical and with not A1F (ensure it's 0)
 	stat_reg &= ~STATUSREG_A1F;
 	writeI2C_Register(address, DS3231_STATUSREG, stat_reg);
-	//printStatusRegisters();
 }
 
 // reset alarm 2 - same idea as alarm 1
@@ -199,19 +169,11 @@ void DS3231::resetAlarm2Flag(){
 
 // enable alarm 1
 void DS3231::enableAlarm1(){
-	//printf("Enabling alarm 1..\n");
-	//printControlRegisters();
 	uint8_t ctrl_reg = readI2C_Register(address, DS3231_CONTROLREG);
 
 	//logical and with A2IE & INTCN
 	ctrl_reg |= (CONTROLREG_A1IE | CONTROLREG_INTCN);
-	//printf("Writing %d to ctrl reg.. \n", ctrl_reg);
 	writeI2C_Register(address, DS3231_CONTROLREG, ctrl_reg);
-
-	//printControlRegisters();
-	//ctrl_reg = 0;
-	//ctrl_reg = readI2C_Register(address, DS3231_CONTROLREG);
-	//printf("Double checking control reg status: %d\n", ctrl_reg);
 }
 
 // enable alarm 2
@@ -348,11 +310,9 @@ void DS3231::setNextIntervalAlarm(){
 	current_tm->year += 1900;
 	TIME_t alarm_tm;
 
-	//printf("Current time (asctime): %s\n", asctime(current_time));
 	printf("Current time: %d %d:%d:%d\n", current_tm->dom,
 			current_tm->hour, current_tm->min, current_tm->sec);
 
-	//memcpy(alarm_tm, current_tm, sizeof(TIME_t));
 	alarm_tm = add_time(current_tm, &interval_dt);
 
 	uint8_t seconds = bin2bcd(alarm_tm.sec);
@@ -364,39 +324,11 @@ void DS3231::setNextIntervalAlarm(){
 		printf("These two times should not be the same!! :( \n");
 	}
 
-	//printf("Current time raw:  %lu\n", rawtime_current);
-	//printf("Interval time raw: %lu\n", interval);
-	//printf("Next alarm time raw: %lu\n", rawtime_next_alarm);
-
 	printf("Next alarm  : %d %d:%d:%d\n", alarm_tm.dom, alarm_tm.hour,
 			alarm_tm.min, alarm_tm.sec);
-	/*
-	// if minutes match, don't worry about mat
-	if(alarm_tm->min == current_tm->min){
-		minutes |= _BV(7);
-		hours |= _BV(7);
-		mday |= _BV(7);
-		if(alarm_tm->hour == current_tm->hour){
-				hours |= _BV(7);
-				mday |= _BV(7);
-			if(alarm_tm->dom == current_tm->dom){
-				mday |= _BV(7);
-			}
-		}
-	} */
-
-	// could be redundant.. trying anyway
-
-	// TODO: if day is different but hour/min also match..
-
-
-
-	// if the next interval is tomorrow, rtc needs to know that day/date is not to be ignored
-	if(!(alarm_tm.dom > current_tm->dom)){
-		//mday |= _BV(6); //ignore the day/date
-	}
 
 	_delay_ms(8);
+
 	// Write alarm time to RTC (starting at alarm 1 address 0x07
 	beginWrite(address);
 	putChar(DS3231_A1REG);
