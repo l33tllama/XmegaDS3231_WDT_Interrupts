@@ -151,14 +151,16 @@ void CommandReader::setAlarmInput(){
 	// get the alarm type by char (d, i, o, s)
 	char alarmType = alarmInput[0];
 
-	// daily alarm (d)
+	/* daily alarm (d)
+	 * format: HH:MM:SS
+	 * */
 	if(alarmType == 'd'){
 
 		// move pointer to the start of the daily alarm time
 		alarmInput = alarmInput + 2;
 
-		// If incorrect format - should be DD HH:MM:SS
-		if(strlen(alarmInput) != 11){
+		// If incorrect format - should be HH:MM:SS
+		if(strlen(alarmInput) != 8){
 			printf("Error! Daily alarm format incorrect. Please enter the format HH:MM:SS\n");
 			return;
 		}
@@ -179,8 +181,9 @@ void CommandReader::setAlarmInput(){
 			printf("Setting daily alarm for: %d:%d:%d\n", hh_i, mm_i, ss_i);
 		}
 
-
-	} /* interval alarm */
+	} /* interval alarm
+		format: i DD HH:MM:SS
+	*/
 	else if(alarmType == 'i'){
 
 		// move the poiner to the start of the alarm interval time
@@ -222,9 +225,59 @@ void CommandReader::setAlarmInput(){
 		} else {
 			printf("Error parsing alarm interval values.\n");
 		}
-	} /* once-off alarm */
+	} /* once-off alarm
+		format: o YYYY/MM/DD HH:MM:SS
+	*/
 	else if (alarmType == 'o'){
 
+		// move the poiner to the start of the alarm interval time
+		alarmInput = alarmInput + 2;
+
+		if(strlen(alarmInput) != 18){
+			printf("Error! Alarm interval format incorrect. Please enter the format DD HH:MM:SS\n");
+			return;
+		}
+
+		char * dd, * yyyy, *mn;
+		bool dd_s = false;
+		bool mn_s = false;
+		bool yyyy_s = false;
+
+		yyyy = strtok(alarmInput, "/");
+		mm = strtok(NULL, "/");
+		dd = strtok(NULL, " ");
+		hh = strtok(NULL, ":");
+		mm = strtok(NULL, ":");
+		ss = strtok(NULL, ":");
+
+		printf("Read once-off alarm: \n");
+		printf("Year: %s\n", yyyy);
+		printf("Month: %s\n", mn);
+		printf("Days:  %s\n", dd);
+		printf("Hours: %s\n", hh);
+		printf("Mins:  %s\n", mm);
+		printf("Secs:  %s\n", ss);
+
+		yyyy_s = sanity_check_int(yyyy, 4);
+		mn_s = sanity_check_int(mn, 2);
+		hh_s = sanity_check_int(hh, 2);
+		mn_s = sanity_check_int(mm, 2);
+		ss_s = sanity_check_int(ss, 2);
+		dd_s = sanity_check_int(dd, 2);
+
+		if(hh_s && mm_s && ss_s && dd_s && mn_s && yyyy_s){
+			uint8_t hh_i = atoi(hh);
+			uint8_t mm_i = atoi(mm);
+			uint8_t ss_i = atoi(ss);
+			uint8_t dd_i = atoi(dd);
+			uint8_t mn_i = atoi(mn);
+			uint16_t yyyy_i = atoi(yyyy);
+
+			printf("Setting once-off alarm for: %d/%d/%d, %d:%d:%d\n", yyyy_i, mn_i, dd_i, dd_i, hh_i, mm_i, ss_i);
+			TIME_t t;
+			make_time(&t, yyyy_i, mn_i, dd_i, hh_i, mm_i, ss_i);
+			rtc->setOnceOffAlarm(&t);
+		}
 
 	}
 	 /* alarm every second */
@@ -240,7 +293,6 @@ void CommandReader::setAlarmInput(){
 
 		if(sanity_check_int(alarmInput, 2)){
 			uint8_t ss_i = atoi(alarmInput);
-
 			rtc->setMinuteAlarm(ss_i);
 		}
 

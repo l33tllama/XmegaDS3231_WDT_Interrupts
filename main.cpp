@@ -95,7 +95,7 @@ int main(){
 
 			WDT_enable_with_timeout(WDT_PER_1KCLK_gc);	// re-enable WDT to prevent crash
 			printf("Setting next interval time.\n");
-			rtc.setNextIntervalAlarm();					// set new alarm
+			rtc.handleSystemWakeUp();					// set new alarm
 
 			// reset WDT to prevent crash, disable WDT again, then go to sleep to save power
 			WDT_RESET();

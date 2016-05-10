@@ -261,6 +261,11 @@ void DS3231::setDailyAlarm(TIME_t * time){
 	endTransmission();
 }
 
+// TODO: this
+void DS3231::setOnceOffAlarm(TIME_t * t){
+	alarmType = once_off;
+}
+
 // disable alarm interval - maybe when changine alarm type
 void DS3231::disableAlarm(){
 	alarmType = disabled;
@@ -300,6 +305,9 @@ void DS3231::handleSystemWakeUp(){
 		break;
 	case seconds:
 		printf("Seconds alarm TODO\n");
+		break;
+	case once_off:
+		printf("Once off alarm TODO\n");
 		break;
 	default:
 		break;

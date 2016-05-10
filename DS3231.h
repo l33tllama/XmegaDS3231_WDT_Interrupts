@@ -81,7 +81,7 @@ public:
 	void handleSystemWakeUp();
 	void setNextIntervalAlarm();
 	void setAlarmInterval(uint8_t seconds, uint8_t minutes, uint8_t hours, uint8_t days);
-	void setAlarmDate(TIME_t * t);
+	void setOnceOffAlarm(TIME_t * t);
 	virtual ~DS3231();
 };
 
