@@ -45,7 +45,6 @@ DS3231::DS3231(TWI_Data * twi_d, uint8_t address) : TWI(twi_d){
 	enableAlarm1();
 }
 
-// TODO: using interrupts to update system clock internally
 DS3231::DS3231(TWI_Data * twi_d, uint8_t address, bool high_update_frequency){
 
 	if(high_update_frequency){
@@ -69,7 +68,6 @@ void DS3231::disable32kHzOut(){
 
 	stat_reg = 0;
 	stat_reg = readI2C_Register(address, DS3231_STATUSREG);
-
 }
 
 // functions for converting binary <-> binary-coded-decimal
@@ -88,7 +86,6 @@ uint8_t DS3231::readI2C_Register(uint8_t addr, uint8_t reg) {
 }
 
 // write a single value to a register in the DS3231
-// Best to read it first..
 void DS3231::writeI2C_Register(uint8_t addr, uint8_t reg, uint8_t val) {
 	beginWrite(addr);
 	putChar(reg);
@@ -148,7 +145,6 @@ TIME_t DS3231::getTime(){
 void DS3231::resetAlarm1Flag(){
 	printf("Resetting alarm 1 flag..\n");
 
-	_delay_ms(8);
 	// get current status register
 	uint8_t stat_reg = readI2C_Register(address, DS3231_STATUSREG);
 
@@ -185,6 +181,7 @@ void DS3231::enableAlarm2(){
 	writeI2C_Register(address, DS3231_CONTROLREG, ctrl_reg);
 }
 
+/* show the current status of the control register */
 void DS3231::printControlRegisters(){
 	uint8_t control_reg;
 	const char *ctrl_reg_names[] = {"A1IE", "A2IE", "INTCN", "RS1", "RS2", "CONV", "BBSQW", "EOSC"};
@@ -209,6 +206,7 @@ void DS3231::printControlRegisters(){
 	printf("\n");
 }
 
+/* show the current status of the status register */
 void DS3231::printStatusRegisters(){
 	uint8_t status_reg;
 	const char *status_reg_names[] = {"A1F", "A2F", "BSY", "EN32kHz", "0", "0", "0", "OSF"};
@@ -216,7 +214,6 @@ void DS3231::printStatusRegisters(){
 	putChar(DS3231_STATUSREG);
 	endTransmission();
 
-	//beginRead(address);
 	status_reg = beginReadFirstByte(address);
 	endTransmission();
 	printf("Status Register:\n");
@@ -271,7 +268,6 @@ void DS3231::disableAlarm(){
 
 void DS3231::setAlarmInterval(uint8_t seconds, uint8_t minutes, uint8_t hours, uint8_t days){
 	make_dtime(&interval_dt, 0, 0, days, hours, minutes, seconds);
-	// TODO: deal with times when alarm was a different type (eg daily)
 	alarmType = interval;
 
 	enableAlarm1();
@@ -291,11 +287,24 @@ void DS3231::setMinuteAlarm(uint8_t seconds){
 	putChar(_BV(7)); // ignore day/date
 	endTransmission();
 
-	_delay_ms(8);
 	readCurrentAlarm1();
 }
 
-// TODO: thoroughly read Pascal's code and other's code..
+void DS3231::handleSystemWakeUp(){
+	switch(alarmType){
+	case interval:
+		setNextIntervalAlarm();
+		break;
+	case daily:
+		printf("Daily alarm TODO\n");
+		break;
+	case seconds:
+		printf("Seconds alarm TODO\n");
+		break;
+	default:
+		break;
+	}
+}
 
 // set the next alarm, based on the pre-set interval time
 void DS3231::setNextIntervalAlarm(){
@@ -321,13 +330,13 @@ void DS3231::setNextIntervalAlarm(){
 	uint8_t mday = bin2bcd(alarm_tm.dom);
 
 	if (&alarm_tm == current_tm){
-		printf("These two times should not be the same!! :( \n");
+		return;
+		printf("ERROR - unable to set alarm. New alarm time = current time.\n");
 	}
 
 	printf("Next alarm  : %d %d:%d:%d\n", alarm_tm.dom, alarm_tm.hour,
 			alarm_tm.min, alarm_tm.sec);
 
-	_delay_ms(8);
 
 	// Write alarm time to RTC (starting at alarm 1 address 0x07
 	beginWrite(address);
@@ -338,16 +347,13 @@ void DS3231::setNextIntervalAlarm(){
 	putChar(mday);
 	endTransmission();
 
-	_delay_ms(15);
-
-	readCurrentAlarm1();
+	// readCurrentAlarm1();
 
 }
 
 void DS3231::readCurrentAlarm1(){
 
 	printf("Getting current alarm.. ");
-	_delay_ms(8);
 	uint8_t seconds = 0;
 	uint8_t minutes = 0;
 	uint8_t hours = 0;
@@ -366,7 +372,6 @@ void DS3231::readCurrentAlarm1(){
 	daydt = bcd2bin((uint8_t)getChar()) & tm_mask & tm_ddt_mask;
 	endTransmission();
 
-	_delay_ms(8);
 	printf("%d %d:%d:%d\n", daydt, hours, minutes, seconds);
 
 }

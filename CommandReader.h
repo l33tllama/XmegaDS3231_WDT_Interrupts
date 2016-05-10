@@ -13,7 +13,7 @@
 
 #define HELP "HELP"
 #define SETDT "SETDT"
-#define SETALRM "SETALRM"
+#define SETAL "SETAL"
 #define EXIT "EXIT"
 #define MAX_INPUT_LEN 64
 

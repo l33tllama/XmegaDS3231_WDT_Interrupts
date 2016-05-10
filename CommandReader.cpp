@@ -225,9 +225,11 @@ void CommandReader::setAlarmInput(){
 	} /* once-off alarm */
 	else if (alarmType == 'o'){
 
+
 	}
 	 /* alarm every second */
 	else if (alarmType == 's'){
+
 
 	} /* alarm on x second every minute (mostly just testing) */
 	else if (alarmType == 'm'){
@@ -246,85 +248,6 @@ void CommandReader::setAlarmInput(){
 	} else {
 		printf("Alarm type: %c not recognised. Please try again.\n", alarmType);
 	}
-
-
-	/*
-	printf("Enter alarm format [i/d/s/o] DD HH:MM:SS with asterisks to ");
-	printf("Enter alarm format [W/M] DD HH:MM:SS with asterisks to denote repeats.\n");
-	printf("(WM - weekday / day of month)\n");
-	printf("eg. * ** 12:00:00 - alarm at 12PM each day.\n");
-	printf("eg. W 01 00:00:00 - alarm at 12AM each Monday.\n");
-	printf("eg. * ** **:10:00 - alarm every 10 mins.\n");
-	char datetime[64];
-	scanf("%s %s %s", datetime, datetime+2, datetime+5);
-	datetime[1] = ' ';
-	datetime[4] = ' ';
-
-	// If length was correct
-	if(strlen(datetime) == 13){
-		struct tm time;
-		// split string into relevant sections using strtok
-		char * wm, * dd, * hh, * mm, * ss;
-		wm = strtok(datetime, " ");
-		dd = strtok(NULL, " ");
-		hh = strtok(NULL, ":");
-		mm = strtok(NULL, ":");
-		ss = strtok(NULL, "");
-
-		// sanity check strings to make sure they're ints (see if each char is an ASCII number)
-		bool dd_s, mm_s, wm_s, hh_s, ss_s;
-		wm_s = false;
-		dd_s = sanity_check_alrm(dd, 2);
-		mm_s = sanity_check_alrm(mm, 2);
-		// simple sanity check of Wd/Md char
-		wm_s = (*wm == 'W' || *wm == 'w' || *wm == 'M' || *wm == 'm') ? true : false;
-		hh_s = sanity_check_alrm(hh, 2);
-		mm_s = sanity_check_alrm(mm, 2);
-		ss_s = sanity_check_alrm(ss, 2);
-
-		if(dd_s && mm_s && wm_s && hh_s && ss_s){
-			WMDay wmds = weekDay;
-			uint8_t dd_i = 0;
-			uint8_t mm_i = 0;
-			uint8_t hh_i = 0;
-			uint8_t ss_i = 0;
-			if (*wm == 'M' || *wm == 'm'){
-				wmds = dayOfMonth;
-			}
-			printf("Date and time probably entered correctly. Setting to: \n");
-
-			if(!str_is_astrisks(dd, 2)){
-				dd_i = atoi(dd);
-			}
-			if(!str_is_astrisks(mm, 2)){
-				mm_i = atoi(mm);
-			}
-			if(!str_is_astrisks(hh, 2)){
-				hh_i = atoi(hh);
-			}
-			if(!str_is_astrisks(ss, 2)){
-				ss_i = atoi(ss);
-			}
-			printf("Interpreted ints: \n");
-			printf("%s %d ", wm, dd_i);
-			printf("%d:%d:%d\n", hh_i, mm_i, ss_i);
-			time.tm_mday = dd_i;
-			time.tm_mon = mm_i;
-			time.tm_hour = hh_i;
-
-			rtc->setAlarmInterval(&time, wmds);
-			printf("Alarm set.\n");
-		}
-	} else {
-		printf("Error - Alarm interval entered incorrectly. Not exactly 13 characters (was %d characters and %s)\n", strlen(datetime), datetime);
-	}
-
-	//rtc->setAlarmInterval(
-
-	//TODO: similar to set time, but read asterisks
-	//TODO: maybe only update time values that don't have asterisks in other function?
-	 *
-	 * */
 }
 
 //TODO: timeout
@@ -356,7 +279,7 @@ void CommandReader::mainLoop(){
 				printf("EXIT - exit command interface \n");
 			} else if (strcmp(cmd, SETDT) == 0){
 				setDateTimeInput();
-			} else if (strcmp(cmd, SETALRM) == 0){
+			} else if (strcmp(cmd, SETAL) == 0){
 				setAlarmInput();
 			} else if(strcmp(cmd, EXIT) == 0){
 				running = false;

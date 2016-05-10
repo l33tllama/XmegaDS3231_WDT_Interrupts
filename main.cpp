@@ -10,6 +10,7 @@
  *
  */
 
+//TODO : global: move more data to program space (progmem)
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
@@ -51,8 +52,8 @@ static inline void setup_twi_rtc(uint8_t rtc_address){
 	rtc = DS3231(&twi_d, rtc_address);
 }
 
-int main(){
-
+inline void setup(){
+	// set
 	init_clocks();						// set clock to internal @ 32MHz
 	restart_interrupts();				/* make sure interrupts are reset */
 	setup_porta_interrupts();			/* enable interrupts on port a (falling) */
@@ -65,42 +66,46 @@ int main(){
 	WDT_RESET();
 	WDT_disable();
 
-
-	printf("\nPROGRAM BEGIN\n\n");
-	cmdReader.mainLoop();
-
 	// enable testing LEDs
 	PORTB.DIR  = 0b1111;
+}
 
-	// go to sleep... (change pin to #2? - only asynchronous pin?)
-	printf("Going to sleep..\n");
+// program entry point
+int main(){
+
+	// all the initial setup stuff (clocks, interrupts, WDT, USART, TWI, port inputs/outputs)
+	setup();
+
+	printf("\nPROGRAM BEGIN\n\n");
+
+	// read initial start-up command (set time, set alarm)
+	cmdReader.mainLoop();
+
+	// set sleep mode and go to sleep
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	sleep_enable();
 	sleep_mode();
-	printf("Woke up from sleep for first time.\n");
 
-	// main loop..
+	// main loop
 	while(1){
+
 		if((interrupt_status & ALARM_FLAG) == ALARM_FLAG){
 			printf("Alarm triggered!\n");
+			interrupt_status &= ~ALARM_FLAG;			//clear alarm flag
 
-			// enable WDT with period of 1s
-			WDT_enable_with_timeout(WDT_PER_1KCLK_gc);
-			//printf("Setting next alarm.\n");
-			rtc.setNextIntervalAlarm();
-			interrupt_status &= ~ALARM_FLAG;	//clear alarm flag
-			printf("Interrupt status reg reset.\n");
+			WDT_enable_with_timeout(WDT_PER_1KCLK_gc);	// re-enable WDT to prevent crash
+			printf("Setting next interval time.\n");
+			rtc.setNextIntervalAlarm();					// set new alarm
+
+			// reset WDT to prevent crash, disable WDT again, then go to sleep to save power
 			WDT_RESET();
 			WDT_disable();
 			sleep_enable();
 			sleep_mode();
 		}
-
-
 		else {
 			printf("We woke up for some reason that wasn't due to port a pin 0..\n");
 		}
-		printf(".");
 	}
 
 }

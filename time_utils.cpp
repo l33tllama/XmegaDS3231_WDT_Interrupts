@@ -1,7 +1,7 @@
 #include "time_utils.h"
 #include <stdio.h>
 
-unsigned long seconds_per_month_no_leap[12] = {
+unsigned long seconds_per_month_no_leap[12]  = {
 	MON31,	MON28,	MON31,	MON30,	MON31,	MON30,
 	MON31,	MON31,	MON30,	MON31,	MON30,	MON31
 };
